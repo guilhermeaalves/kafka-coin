@@ -1,0 +1,24 @@
+version: '3.8'
+services:
+  app:
+    build: .
+    container_name: kafka_app
+    env_file: .env
+    ports:
+      - "8000:8000"
+    restart: always
+    command: uvicorn app:app --host 0.0.0.0 --port 8000
+
+  producer_news:
+    build: .
+    container_name: kafka_news
+    env_file: .env
+    restart: always
+    command: python producer_news.py
+
+  producer_btc:
+    build: .
+    container_name: kafka_btc
+    env_file: .env
+    restart: always
+    command: python producer_btc.py

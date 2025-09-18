@@ -1,0 +1,167 @@
+{
+  "name": "KafkaCoin",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "https://bd33b1fe9900.ngrok-free.app/events",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "6b3e041e-d4ab-47c3-bf5f-7a541a1859d2",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const root = $json;\nlet rawEvents = Array.isArray(root.events) ? root.events : [];\n\nif (!rawEvents.length && typeof root.events === 'string') {\n  try {\n    const parsedArr = JSON.parse(root.events);\n    if (Array.isArray(parsedArr)) rawEvents = parsedArr;\n  } catch (e) {}\n}\n\nconst parsed = [];\nconst erros = [];\n\nfor (const s of rawEvents) {\n  if (s && typeof s === 'object') {\n    parsed.push(s);\n    continue;\n  }\n  if (typeof s === 'string') {\n    try {\n      const obj = JSON.parse(s);\n      parsed.push(obj);\n    } catch (err) {\n      erros.push({ erro: String(err), raw: s });\n    }\n  }\n}\n\n// Retorna o item com os eventos válidos e os que deram erro\nreturn {\n  events_parsed: parsed,\n  events_com_erro: erros,\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "f22a35c2-2b92-4e08-bff7-081944bcf543",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "={{ [\n  \"Você é um analista do KafkaCoin.\",\n  \"Revise as notícias abaixo e gere uma recomendação geral sobre o mercado de BTC.\",\n  \"Considere a variação de preço de 24h e o contexto das notícias.\",\n  \"Não repita os textos de recomendação originais.\",\n  \"Responda em PT-BR com:\",\n  \"- Um resumo do cenário atual\",\n  \"- Impacto potencial para o preço do BTC\",\n  \"- Probabilidade de alta ou baixa (baixa, moderada, alta)\",\n  \"- Uma call-to-action curta para o canal do Slack\",\n  \"\",\n  \"Eventos:\",\n  ($json.events_parsed || []).slice(0, 5).map((e, i) => [\n    `#${i+1}: ${e.title || \"Sem título\"} — ${e.source_news || \"Fonte N/A\"}`,\n    `Var 24h: ${e.price_change_pct_24h ?? \"N/A\"}% | USD: ${e.price_usd ?? \"N/A\"}`,\n    `Descrição: ${(e.description || \"\").slice(0, 300)}`,\n    `Link: ${e.url || \"N/A\"}`\n  ].join(\"\\n\")).join(\"\\n\\n\")\n].join(\"\\n\\n\") }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        656,
+        0
+      ],
+      "id": "1c82466a-f733-4a70-8fc2-68ed2c3a38aa",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "Wt3pbSIahY7njys9",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://hooks.slack.com/triggers/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",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "teste",
+              "value": "={{ $json.message.content }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1008,
+        0
+      ],
+      "id": "5f8c3283-6313-4615-9e83-7218625cb2ce",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 2
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "1069d3da-6b68-499f-8f1c-eae4d91dbaf2",
+      "name": "Schedule Trigger"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "2c88452a-4db0-4387-ba4b-e80be5002921",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "129833bfa0f199012d78bb4218b36f951524dbe5c86cde20d110c4560e9a7302"
+  },
+  "id": "oiX4nYdhQ96mDlrk",
+  "tags": []
+}
