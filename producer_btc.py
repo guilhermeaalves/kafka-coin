@@ -11,9 +11,7 @@ PASSWORD  = os.getenv("KAFKA_PASSWORD_BTC")
 TOPIC     = os.getenv("KAFKA_TOPIC_BTC")
 CA_PEM    = os.getenv("SSL_CA_LOCATION")
 
-VS_CURRENCIES = "brl,usd,eur"  # moedas que vamos trazer da API
-
-# API pública de cotações (CoinGecko)
+VS_CURRENCIES = "brl,usd,eur"
 API_URL = "https://api.coingecko.com/api/v3/simple/price"
 PARAMS = {
     "ids": "bitcoin",
@@ -29,11 +27,10 @@ def kafka_producer():
         "sasl.mechanisms": "SCRAM-SHA-512",
         "sasl.username": USERNAME,
         "sasl.password": PASSWORD,
-        # Mantém verificação do hostname no certificado (boa prática)
         "ssl.endpoint.identification.algorithm": "https",
         "client.id": "btc-producer",
     }
-    # Necessário quando o certificado do broker é assinado por uma CA não pública (caso das rotas internas)
+   
     if CA_PEM:
         conf["ssl.ca.location"] = CA_PEM
     return Producer(conf)
@@ -48,7 +45,7 @@ def fetch_prices():
         "price": float(data.get("brl")),
         "price_usd": float(data.get("usd")),
         "price_eur": float(data.get("eur")),
-        "price_change_pct_24h": float(data.get("brl_24h_change")),  # pode trocar p/ usd_24h_change se preferir
+        "price_change_pct_24h": float(data.get("brl_24h_change")),
         "source": "coingecko",
         "ts": datetime.datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
     }
