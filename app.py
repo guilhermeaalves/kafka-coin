@@ -38,7 +38,6 @@ def consume_loop():
         "group.id": os.getenv("KAFKA_GROUP_ID", "orchestrate-consumer"),
         "auto.offset.reset": os.getenv("KAFKA_OFFSET_RESET", "latest"),
 
-        # Segurança
         "security.protocol": "SASL_SSL",
         "sasl.mechanisms": os.getenv("KAFKA_SASL_MECH", "SCRAM-SHA-512"),
         "sasl.username": os.getenv("KAFKA_USERNAME"),
@@ -46,8 +45,6 @@ def consume_loop():
         "ssl.ca.location": os.getenv("SSL_CA_LOCATION"),
         "ssl.endpoint.identification.algorithm": "https",
 
-        # Diagnóstico (opcional):
-        # "debug": "security",
     }
 
     consumer = Consumer(conf)
