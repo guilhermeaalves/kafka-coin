@@ -7,11 +7,9 @@ from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
-# Configurações da API GNews
 GNEWS_API_KEY = os.getenv("GNEWS_API_KEY")
 GNEWS_ENDPOINT = f'https://gnews.io/api/v4/search?q=crypto&lang=en&token={GNEWS_API_KEY}'
 
-# Configurações do Kafka
 KAFKA_BROKER = os.getenv("KAFKA_BOOTSTRAP")
 KAFKA_TOPIC = os.getenv("KAFKA_TOPIC_NEWS", "news")
 
